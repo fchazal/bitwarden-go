@@ -8,8 +8,8 @@ import (
 	"log"
 	"net/http"
 
-	bw "github.com/fchazal/bitwarden-go/internal/common"
-	"github.com/fchazal/dgoogauth"
+	"github.com/dgryski/dgoogauth"
+	bw "github.com/fchazal/bitwarden-go/common"
 )
 
 type tfaObject struct {

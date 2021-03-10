@@ -253,17 +253,22 @@ func (h *APIHandler) HandleSync(w http.ResponseWriter, req *http.Request) {
 	}
 
 	data := bw.SyncData{
-		Profile: prof,
-		Folders: folders,
-		Domains: Domains,
-		Object:  "sync",
-		Ciphers: ciphs,
+		Profile:     prof,
+		Folders:     folders,
+		Domains:     Domains,
+		Object:      "sync",
+		Ciphers:     ciphs,
+		Collections: []string{},
+		Policies:    []string{},
+		Sends:       []string{},
 	}
 
 	jdata, err := json.Marshal(&data)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	log.Println("sent : " + string(jdata))
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jdata)

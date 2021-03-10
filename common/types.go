@@ -155,11 +155,14 @@ func FakeNewAPI(ciph *Cipher) {
 }
 
 type SyncData struct {
-	Profile Profile
-	Folders []Folder
-	Ciphers []Cipher
-	Domains Domains
-	Object  string
+	Profile     Profile
+	Folders     []Folder
+	Ciphers     []Cipher
+	Domains     Domains
+	Object      string
+	Policies    []string
+	Sends       []string
+	Collections []string
 }
 
 type Domains struct {

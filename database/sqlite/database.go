@@ -21,7 +21,7 @@ type DB struct {
 
 const acctTbl = `
 CREATE TABLE IF NOT EXISTS "accounts" (
-  id                  INTEGER,
+  id                  TEXT,
   name                TEXT,
   email               TEXT UNIQUE,
   masterPasswordHash  NUMERIC,
@@ -142,14 +142,9 @@ func (db *DB) GetCipher(owner string, ciphID string) (bw.Cipher, error) {
 }
 
 func (db *DB) GetCiphers(owner string) ([]bw.Cipher, error) {
-	iowner, err := strconv.ParseInt(owner, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-
 	var ciphers []bw.Cipher
 	query := "SELECT id, type, revisiondate, data, folderid, favorite FROM ciphers WHERE owner = $1"
-	rows, err := db.db.Query(query, iowner)
+	rows, err := db.db.Query(query, owner)
 
 	for rows.Next() {
 		ciph, err := sqlRowToCipher(rows)
@@ -258,12 +253,14 @@ func (db *DB) DeleteCipher(owner string, ciphID string) error {
 }
 
 func (db *DB) AddAccount(acc bw.Account) error {
-	stmt, err := db.db.Prepare("INSERT INTO accounts(name, email, masterPasswordHash, masterPasswordHint, key, refreshtoken, privatekey, pubkey, tfasecret, kdf, kdfIterations) values(?,?,?,?,?,?,?,?,?,?,?)")
+	stmt, err := db.db.Prepare("INSERT INTO accounts(id, name, email, masterPasswordHash, masterPasswordHint, key, refreshtoken, privatekey, pubkey, tfasecret, kdf, kdfIterations) values(?,?,?,?,?,?,?,?,?,?,?,?)")
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.Exec(acc.Name, acc.Email, acc.MasterPasswordHash, acc.MasterPasswordHint, acc.Key, "", "", "", "", acc.Kdf, acc.KdfIterations)
+	acc.Id = uuid.NewV4().String()
+
+	_, err = stmt.Exec(acc.Id, acc.Name, acc.Email, acc.MasterPasswordHash, acc.MasterPasswordHint, acc.Key, "", "", "", "", acc.Kdf, acc.KdfIterations)
 	if err != nil {
 		return err
 	}
@@ -272,17 +269,18 @@ func (db *DB) AddAccount(acc bw.Account) error {
 }
 
 func (db *DB) UpdateAccountInfo(acc bw.Account) error {
-	id, err := strconv.ParseInt(acc.Id, 10, 64)
-	if err != nil {
-		return err
-	}
-
+	/*
+		id, err := strconv.ParseInt(acc.Id, 10, 64)
+		if err != nil {
+			return err
+		}
+	*/
 	stmt, err := db.db.Prepare("UPDATE accounts SET refreshtoken=$1, privatekey=$2, pubkey=$3 WHERE id=$4")
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.Exec(acc.RefreshToken, acc.KeyPair.EncryptedPrivateKey, acc.KeyPair.PublicKey, id)
+	_, err = stmt.Exec(acc.RefreshToken, acc.KeyPair.EncryptedPrivateKey, acc.KeyPair.PublicKey, acc.Id)
 	if err != nil {
 		return err
 	}
@@ -304,13 +302,13 @@ func (db *DB) GetAccount(username string, refreshtoken string) (bw.Account, erro
 		row = db.db.QueryRow(query, refreshtoken)
 	}
 
-	var iid int
-	err := row.Scan(&iid, &acc.Name, &acc.Email, &acc.MasterPasswordHash, &acc.MasterPasswordHint, &acc.Key, &acc.RefreshToken, &acc.KeyPair.EncryptedPrivateKey, &acc.KeyPair.PublicKey, &acc.TwoFactorSecret, &acc.Kdf, &acc.KdfIterations)
+	//	var iid int
+	err := row.Scan(&acc.Id, &acc.Name, &acc.Email, &acc.MasterPasswordHash, &acc.MasterPasswordHint, &acc.Key, &acc.RefreshToken, &acc.KeyPair.EncryptedPrivateKey, &acc.KeyPair.PublicKey, &acc.TwoFactorSecret, &acc.Kdf, &acc.KdfIterations)
 	if err != nil {
 		return acc, err
 	}
 
-	acc.Id = strconv.Itoa(iid)
+	//	acc.Id = strconv.Itoa(iid)
 
 	return acc, nil
 }
@@ -321,10 +319,11 @@ func (db *DB) AddFolder(name string, owner string) (bw.Folder, error) {
 		return bw.Folder{}, err
 	}
 
-	newFolderID, err := uuid.NewV4()
-	if err != nil {
-		return bw.Folder{}, err
-	}
+	newFolderID := uuid.NewV4()
+	//newFolderID, err := uuid.NewV4()
+	//if err != nil {
+	//	return bw.Folder{}, err
+	//}
 
 	folder := bw.Folder{
 		Id:           newFolderID.String(),

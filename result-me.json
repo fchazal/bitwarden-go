@@ -1,0 +1,38 @@
+{
+	"Profile": {
+		"Id": "1",
+		"Name": null,
+		"Email": "francois@chazal.me",
+		"EmailVerified": false,
+		"Premium": false,
+		"MasterPasswordHint": null,
+		"Culture": "en-US",
+		"TwoFactorEnabled": false,
+		"Key": "2.31SUXnwRBh8QeMTiWI4qYA==|h8JEzJ9TN7SOQex11KuQfMAUAo2lODldMjof+Kwcakazm93nsWQvaWil3C7iSWe+DrHoWD/hZXOAtrbWg1AJy0C++Ab62PDIMNtUze3qJJA=|w/nXNNpNL+7pkX9a/8E6TNQTPtym6YNCREJzGt3n73U=",
+		"PrivateKey": "",
+		"SecurityStamp": null,
+		"Organizations": null,
+		"Object": "profile"
+	},
+	"Folders": [],
+	"Ciphers": [],
+	"Domains": {
+		"EquivalentDomains": null,
+		"GlobalEquivalentDomains": [
+			{
+				"Type": 1,
+				"Domains": [
+					"youtube.com",
+					"google.com",
+					"gmail.com"
+				],
+				"Excluded": false
+			}
+		],
+		"Object": "domains"
+	},
+	"Object": "sync",
+	"Policies": [],
+	"Sends": [],
+	"Collections": []
+}
