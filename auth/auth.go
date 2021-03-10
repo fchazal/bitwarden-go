@@ -17,7 +17,7 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 
-	bw "github.com/VictorNine/bitwarden-go/internal/common"
+	bw "github.com/fchazal/bitwarden-go/common"
 )
 
 type Auth struct {

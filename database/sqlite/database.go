@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	bw "github.com/VictorNine/bitwarden-go/internal/common"
+	bw "github.com/fchazal/bitwarden-go/common"
 	_ "github.com/mattn/go-sqlite3"
 	uuid "github.com/satori/go.uuid"
 )
