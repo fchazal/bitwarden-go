@@ -21,7 +21,7 @@ type DB struct {
 	dir string
 }
 
-const dbName = "db.sqlite"
+const dbName = "bitwarden-go.db"
 
 const acctTbl = `
 CREATE TABLE IF NOT EXISTS "accounts" (
