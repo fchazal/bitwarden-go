@@ -10,8 +10,9 @@ This project is originating from VictorNine source code who did most of the work
 ## TODO LIST
  
 	[x] Unable to sync on mobile app
+	[x] Unable to delete cyphers
 	[ ] Unable to delete folders
-	[ ] Unable to delte cyphers
+	[ ] Cyphers bin not implemented
 	[ ] HTTPS layer would be a nice feature
 
 ## Usage

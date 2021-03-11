@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"strconv"
 	"time"
 
 	bw "github.com/fchazal/bitwarden-go/common"
@@ -42,7 +41,7 @@ PRIMARY KEY(id)
 
 const ciphersTbl = `
 CREATE TABLE IF NOT EXISTS "ciphers" (
-  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  id           TEXT,
   type         INT,
   revisiondate INT,
   data         REAL,
@@ -105,11 +104,12 @@ func sqlRowToCipher(row interface {
 		FolderId:            nil,
 	}
 
-	var iid, favorite int
+	var id string
+	var favorite int
 	var revDate int64
 	var blob []byte
 	var folderid sql.NullString
-	err := row.Scan(&iid, &ciph.Type, &revDate, &blob, &folderid, &favorite)
+	err := row.Scan(&id, &ciph.Type, &revDate, &blob, &folderid, &favorite)
 	if err != nil {
 		return ciph, err
 	}
@@ -123,7 +123,7 @@ func sqlRowToCipher(row interface {
 		ciph.Favorite = true
 	}
 
-	ciph.Id = strconv.Itoa(iid)
+	ciph.Id = id
 	ciph.RevisionDate = time.Unix(revDate, 0)
 	if folderid.Valid {
 		ciph.FolderId = &folderid.String
@@ -135,13 +135,8 @@ func sqlRowToCipher(row interface {
 }
 
 func (db *DB) GetCipher(owner string, ciphID string) (bw.Cipher, error) {
-	iciphID, err := strconv.ParseInt(ciphID, 10, 64)
-	if err != nil {
-		return bw.Cipher{}, err
-	}
-
 	query := "SELECT id, type, revisiondate, data, folderid, favorite FROM ciphers WHERE owner = $1 AND id = $2"
-	row := db.db.QueryRow(query, owner, iciphID)
+	row := db.db.QueryRow(query, owner, ciphID)
 
 	return sqlRowToCipher(row)
 }
@@ -167,9 +162,10 @@ func (db *DB) GetCiphers(owner string) ([]bw.Cipher, error) {
 }
 
 func (db *DB) NewCipher(ciph bw.Cipher, owner string) (bw.Cipher, error) {
+	ciph.Id = uuid.NewV4().String()
 	ciph.RevisionDate = time.Now()
 
-	stmt, err := db.db.Prepare("INSERT INTO ciphers(type, revisiondate, data, owner,folderid, favorite) values(?,?,?, ?, ?, ?)")
+	stmt, err := db.db.Prepare("INSERT INTO ciphers(id, type, revisiondate, data, owner,folderid, favorite) values(?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		return ciph, err
 	}
@@ -179,13 +175,10 @@ func (db *DB) NewCipher(ciph bw.Cipher, owner string) (bw.Cipher, error) {
 		return ciph, err
 	}
 
-	res, err := stmt.Exec(ciph.Type, ciph.RevisionDate.Unix(), data, owner, ciph.FolderId, 0)
+	_, err = stmt.Exec(ciph.Id, ciph.Type, ciph.RevisionDate.Unix(), data, owner, ciph.FolderId, 0)
 	if err != nil {
 		return ciph, err
 	}
-
-	lID, err := res.LastInsertId()
-	ciph.Id = fmt.Sprintf("%v", lID)
 
 	bw.FakeNewAPI(&ciph)
 
@@ -195,11 +188,6 @@ func (db *DB) NewCipher(ciph bw.Cipher, owner string) (bw.Cipher, error) {
 
 // Important to check that the owner is correct before an update!
 func (db *DB) UpdateCipher(newData bw.Cipher, owner string, ciphID string) error {
-	iciphID, err := strconv.ParseInt(ciphID, 10, 64)
-	if err != nil {
-		return err
-	}
-
 	favorite := 0
 	if newData.Favorite {
 		favorite = 1
@@ -215,7 +203,7 @@ func (db *DB) UpdateCipher(newData bw.Cipher, owner string, ciphID string) error
 		return err
 	}
 
-	_, err = stmt.Exec(newData.Type, time.Now().Unix(), bdata, newData.FolderId, favorite, iciphID, owner)
+	_, err = stmt.Exec(newData.Type, time.Now().Unix(), bdata, newData.FolderId, favorite, ciphID, owner)
 	if err != nil {
 		return err
 	}
@@ -225,17 +213,12 @@ func (db *DB) UpdateCipher(newData bw.Cipher, owner string, ciphID string) error
 
 // Important to check that the owner is correct before an update!
 func (db *DB) DeleteCipher(owner string, ciphID string) error {
-	iciphID, err := strconv.ParseInt(ciphID, 10, 64)
-	if err != nil {
-		return err
-	}
-
 	stmt, err := db.db.Prepare("DELETE from ciphers WHERE id=$1 AND owner=$2")
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.Exec(iciphID, owner)
+	_, err = stmt.Exec(ciphID, owner)
 	if err != nil {
 		return err
 	}
@@ -259,12 +242,6 @@ func (db *DB) AddAccount(acc bw.Account) error {
 }
 
 func (db *DB) UpdateAccountInfo(acc bw.Account) error {
-	/*
-		id, err := strconv.ParseInt(acc.Id, 10, 64)
-		if err != nil {
-			return err
-		}
-	*/
 	stmt, err := db.db.Prepare("UPDATE accounts SET refreshtoken=$1, privatekey=$2, pubkey=$3 WHERE id=$4")
 	if err != nil {
 		return err
@@ -298,17 +275,11 @@ func (db *DB) GetAccount(username string, refreshtoken string) (bw.Account, erro
 		return acc, err
 	}
 
-	//	acc.Id = strconv.Itoa(iid)
-
 	return acc, nil
 }
 
 func (db *DB) AddFolder(name string, owner string) (bw.Folder, error) {
 	newFolderID := uuid.NewV4()
-	//newFolderID, err := uuid.NewV4()
-	//if err != nil {
-	//	return bw.Folder{}, err
-	//}
 
 	folder := bw.Folder{
 		Id:           newFolderID.String(),

@@ -152,9 +152,15 @@ func (h *APIHandler) HandleCipherUpdate(w http.ResponseWriter, req *http.Request
 		log.Fatal("Account lookup " + err.Error())
 	}
 
-	log.Println("Method : " + req.Method)
+	method := req.Method
+	if method == "PUT" && strings.HasSuffix(id, "/delete") {
+		method = "DELETE" // strange use of API verbs
+		id = strings.TrimSuffix(id, "/delete")
+	}
 
-	switch req.Method {
+	log.Println("Method : " + method)
+
+	switch method {
 	case "GET":
 		log.Println("GET Ciphers for " + acc.Id)
 		var data []byte
@@ -271,8 +277,6 @@ func (h *APIHandler) HandleSync(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	log.Println("sent : " + string(jdata))
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jdata)
@@ -419,6 +423,14 @@ func (h *APIHandler) HandleFolderUpdate(w http.ResponseWriter, req *http.Request
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(data)
 		log.Println("Folder " + folderID + " updated")
+		return
+
+	case "DELETE":
+		// Get the folder id
+		folderID := strings.TrimPrefix(req.URL.Path, "/api/folders/")
+
+		w.Header().Set("Content-Type", "application/json")
+		log.Println("Folder " + folderID + " deleted")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

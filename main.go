@@ -88,4 +88,5 @@ func main() {
 
 	log.Println("Starting server on " + cfg.hostAddr + ":" + cfg.hostPort)
 	log.Fatal(http.ListenAndServe(cfg.hostAddr+":"+cfg.hostPort, mux))
+	//log.Fatal(http.ListenAndServeTLS(cfg.hostAddr+":"+cfg.hostPort, "server.crt", "server.key", mux))
 }
