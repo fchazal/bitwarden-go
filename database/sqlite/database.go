@@ -126,17 +126,13 @@ func sqlRowToCipher(row interface {
 }
 
 func (db *DB) GetCipher(owner string, ciphID string) (bw.Cipher, error) {
-	iowner, err := strconv.ParseInt(owner, 10, 64)
-	if err != nil {
-		return bw.Cipher{}, err
-	}
 	iciphID, err := strconv.ParseInt(ciphID, 10, 64)
 	if err != nil {
 		return bw.Cipher{}, err
 	}
 
 	query := "SELECT id, type, revisiondate, data, folderid, favorite FROM ciphers WHERE owner = $1 AND id = $2"
-	row := db.db.QueryRow(query, iowner, iciphID)
+	row := db.db.QueryRow(query, owner, iciphID)
 
 	return sqlRowToCipher(row)
 }
@@ -162,11 +158,6 @@ func (db *DB) GetCiphers(owner string) ([]bw.Cipher, error) {
 }
 
 func (db *DB) NewCipher(ciph bw.Cipher, owner string) (bw.Cipher, error) {
-	iowner, err := strconv.ParseInt(owner, 10, 64)
-	if err != nil {
-		return bw.Cipher{}, err
-	}
-
 	ciph.RevisionDate = time.Now()
 
 	stmt, err := db.db.Prepare("INSERT INTO ciphers(type, revisiondate, data, owner,folderid, favorite) values(?,?,?, ?, ?, ?)")
@@ -179,7 +170,7 @@ func (db *DB) NewCipher(ciph bw.Cipher, owner string) (bw.Cipher, error) {
 		return ciph, err
 	}
 
-	res, err := stmt.Exec(ciph.Type, ciph.RevisionDate.Unix(), data, iowner, ciph.FolderId, 0)
+	res, err := stmt.Exec(ciph.Type, ciph.RevisionDate.Unix(), data, owner, ciph.FolderId, 0)
 	if err != nil {
 		return ciph, err
 	}
@@ -195,11 +186,6 @@ func (db *DB) NewCipher(ciph bw.Cipher, owner string) (bw.Cipher, error) {
 
 // Important to check that the owner is correct before an update!
 func (db *DB) UpdateCipher(newData bw.Cipher, owner string, ciphID string) error {
-	iowner, err := strconv.ParseInt(owner, 10, 64)
-	if err != nil {
-		return err
-	}
-
 	iciphID, err := strconv.ParseInt(ciphID, 10, 64)
 	if err != nil {
 		return err
@@ -220,7 +206,7 @@ func (db *DB) UpdateCipher(newData bw.Cipher, owner string, ciphID string) error
 		return err
 	}
 
-	_, err = stmt.Exec(newData.Type, time.Now().Unix(), bdata, newData.FolderId, favorite, iciphID, iowner)
+	_, err = stmt.Exec(newData.Type, time.Now().Unix(), bdata, newData.FolderId, favorite, iciphID, owner)
 	if err != nil {
 		return err
 	}
@@ -230,11 +216,6 @@ func (db *DB) UpdateCipher(newData bw.Cipher, owner string, ciphID string) error
 
 // Important to check that the owner is correct before an update!
 func (db *DB) DeleteCipher(owner string, ciphID string) error {
-	iowner, err := strconv.ParseInt(owner, 10, 64)
-	if err != nil {
-		return err
-	}
-
 	iciphID, err := strconv.ParseInt(ciphID, 10, 64)
 	if err != nil {
 		return err
@@ -245,7 +226,7 @@ func (db *DB) DeleteCipher(owner string, ciphID string) error {
 		return err
 	}
 
-	_, err = stmt.Exec(iciphID, iowner)
+	_, err = stmt.Exec(iciphID, owner)
 	if err != nil {
 		return err
 	}
@@ -314,11 +295,6 @@ func (db *DB) GetAccount(username string, refreshtoken string) (bw.Account, erro
 }
 
 func (db *DB) AddFolder(name string, owner string) (bw.Folder, error) {
-	iowner, err := strconv.ParseInt(owner, 10, 64)
-	if err != nil {
-		return bw.Folder{}, err
-	}
-
 	newFolderID := uuid.NewV4()
 	//newFolderID, err := uuid.NewV4()
 	//if err != nil {
@@ -337,7 +313,7 @@ func (db *DB) AddFolder(name string, owner string) (bw.Folder, error) {
 		return bw.Folder{}, err
 	}
 
-	_, err = stmt.Exec(folder.Id, folder.Name, folder.RevisionDate.Unix(), iowner)
+	_, err = stmt.Exec(folder.Id, folder.Name, folder.RevisionDate.Unix(), owner)
 	if err != nil {
 		return bw.Folder{}, err
 	}
@@ -346,17 +322,12 @@ func (db *DB) AddFolder(name string, owner string) (bw.Folder, error) {
 }
 
 func (db *DB) UpdateFolder(newFolder bw.Folder, owner string) error {
-	iowner, err := strconv.ParseInt(owner, 10, 64)
-	if err != nil {
-		return err
-	}
-
 	stmt, err := db.db.Prepare("UPDATE folders SET name=$1, revisiondate=$2 WHERE id=$3 AND owner=$4")
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.Exec(newFolder.Name, newFolder.RevisionDate.Unix(), newFolder.Id, iowner)
+	_, err = stmt.Exec(newFolder.Name, newFolder.RevisionDate.Unix(), newFolder.Id, owner)
 	if err != nil {
 		return err
 	}
@@ -365,14 +336,9 @@ func (db *DB) UpdateFolder(newFolder bw.Folder, owner string) error {
 }
 
 func (db *DB) GetFolders(owner string) ([]bw.Folder, error) {
-	iowner, err := strconv.ParseInt(owner, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-
 	var folders []bw.Folder
 	query := "SELECT id, name, revisiondate FROM folders WHERE owner = $1"
-	rows, err := db.db.Query(query, iowner)
+	rows, err := db.db.Query(query, owner)
 	if err != nil {
 		return nil, err
 	}

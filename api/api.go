@@ -152,6 +152,8 @@ func (h *APIHandler) HandleCipherUpdate(w http.ResponseWriter, req *http.Request
 		log.Fatal("Account lookup " + err.Error())
 	}
 
+	log.Println("Method : " + req.Method)
+
 	switch req.Method {
 	case "GET":
 		log.Println("GET Ciphers for " + acc.Id)
@@ -169,6 +171,7 @@ func (h *APIHandler) HandleCipherUpdate(w http.ResponseWriter, req *http.Request
 	case "POST":
 		fallthrough // Do same as PUT. Web Vault want's to post
 	case "PUT":
+		log.Println(req.Body)
 		rCiph, err := unmarshalCipher(req.Body)
 		if err != nil {
 			log.Fatal("Cipher decode error" + err.Error())
@@ -223,14 +226,15 @@ func (h *APIHandler) HandleSync(w http.ResponseWriter, req *http.Request) {
 
 	prof := bw.Profile{
 		Id:               acc.Id,
+		Name:             &acc.Name,
 		Email:            acc.Email,
 		EmailVerified:    false,
 		Premium:          false,
 		Culture:          "en-US",
 		TwoFactorEnabled: false,
 		Key:              acc.Key,
-		SecurityStamp:    nil,
-		Organizations:    nil,
+		SecurityStamp:    &acc.Id,
+		Organizations:    []string{},
 		Object:           "profile",
 	}
 
@@ -502,7 +506,7 @@ func unmarshalCipher(data io.ReadCloser) (bw.Cipher, error) {
 	var nciph newCipher
 	err := decoder.Decode(&nciph)
 	if err != nil {
-		return bw.Cipher{}, err
+		return bw.Cipher{}, nil
 	}
 
 	defer data.Close()
