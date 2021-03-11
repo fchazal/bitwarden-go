@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"os"
 	"path"
 	"strconv"
 	"time"
@@ -18,6 +20,8 @@ type DB struct {
 	db  *sql.DB
 	dir string
 }
+
+const dbName = "db.sqlite"
 
 const acctTbl = `
 CREATE TABLE IF NOT EXISTS "accounts" (
@@ -58,6 +62,8 @@ PRIMARY KEY(id)
 `
 
 func (db *DB) Init() error {
+	log.Println("Initializing database...")
+
 	for _, sql := range []string{acctTbl, ciphersTbl, foldersTbl} {
 		if _, err := db.db.Exec(sql); err != nil {
 			return errors.New(fmt.Sprintf("SQL error with %s\n%s", sql, err.Error()))
@@ -72,11 +78,14 @@ func (db *DB) SetDir(d string) {
 
 func (db *DB) Open() error {
 	var err error
-	if db.dir != "" {
-		db.db, err = sql.Open("sqlite3", path.Join(db.dir, "db"))
-	} else {
-		db.db, err = sql.Open("sqlite3", "db")
+
+	path := path.Join(db.dir, dbName)
+	db.db, err = sql.Open("sqlite3", path)
+
+	if _, err := os.Stat(path); err != nil {
+		err = db.Init()
 	}
+
 	return err
 }
 
